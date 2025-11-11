@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reliable File Transfer using UDP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue-500: #007AFF;
+            --primary-blue-700: #0059B8;
+            --primary-blue-100: #E5F2FF;
+            --background-page: #F8F9FA;
+            --background-slide: #FFFFFF;
+            --text-primary: #1A1D21;
+            --text-secondary: #6C757D;
+            --border-divider: #DEE2E6;
+            --success-green: #28A745;
+            --warning-orange: #FD7E14;
+            --error-red: #DC3545;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--background-page);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow: hidden;
+        }
+
+        .presentation-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            padding: 64px;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            background: var(--background-slide);
+            background-image: 
+                linear-gradient(rgba(0, 122, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 122, 255, 0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--text-primary);
+            margin-bottom: 24px;
+        }
+
+        h2 {
+            font-size: 32px;
+            font-weight: 600;
+            line-height: 1.3;
+            color: var(--text-primary);
+            margin-bottom: 32px;
+            border-bottom: 3px solid var(--primary-blue-500);
+            padding-bottom: 16px;
+        }
+
+        h3 {
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1.4;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .subtitle {
+            font-size: 24px;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+        }
+
+        .team-info {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-top: 32px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 32px;
+            margin-top: 32px;
+        }
+
+        .feature-box, .concept-box {
+            background: var(--primary-blue-100);
+            padding: 24px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-blue-500);
+        }
+
+        .feature-list, .concept-list {
+            list-style: none;
+        }
+
+        .feature-list li, .concept-list li {
+            padding: 8px 0;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .feature-list li::before, .concept-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--success-green);
+            font-weight: bold;
+        }
+
+        .architecture-diagram {
+            background: var(--background-slide);
+            border: 2px solid var(--border-divider);
+            border-radius: 8px;
+            padding: 32px;
+            margin: 24px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+        }
+
+        .code-block {
+            background: var(--text-primary);
+            color: var(--background-slide);
+            padding: 24px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            margin: 24px 0;
+            overflow-x: auto;
+        }
+
+        .command-example {
+            background: var(--background-page);
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-divider);
+            margin: 16px 0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .navigation {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            display: flex;
+            gap: 16px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            background: var(--primary-blue-500);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-button:hover {
+            background: var(--primary-blue-700);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 122, 255, 0.12);
+        }
+
+        .nav-button:disabled {
+            background: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .slide-counter {
+            position: fixed;
+            bottom: 32px;
+            left: 32px;
+            background: var(--text-primary);
+            color: var(--background-slide);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            margin-top: 32px;
+        }
+
+        .protocol-flow {
+            background: var(--background-slide);
+            border: 2px solid var(--primary-blue-500);
+            border-radius: 8px;
+            padding: 32px;
+            margin: 24px 0;
+            text-align: center;
+        }
+
+        .flow-step {
+            display: inline-block;
+            background: var(--primary-blue-100);
+            color: var(--primary-blue-700);
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin: 4px;
+            font-weight: 600;
+        }
+
+        .table-container {
+            margin: 24px 0;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--background-slide);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background: var(--primary-blue-100);
+            color: var(--primary-blue-700);
+            padding: 16px 24px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-divider);
+        }
+
+        tr:hover {
+            background: var(--background-page);
+        }
+
+        .title-slide {
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary-blue-100) 0%, var(--background-slide) 100%);
+        }
+
+        .title-slide h1 {
+            font-size: 64px;
+            margin-bottom: 32px;
+        }
+
+        .highlight {
+            color: var(--primary-blue-500);
+            font-weight: 600;
+        }
+
+        .warning {
+            color: var(--warning-orange);
+        }
+
+        .success {
+            color: var(--success-green);
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <!-- Slide 1: Title -->
+        <div class="slide active title-slide">
+            <h1>Reliable File Transfer using UDP</h1>
+            <p class="subtitle">A Client-Server Protocol for Reliable Data Transfer over Unreliable UDP</p>
+            <div class="team-info">
+                <p><strong>Team Members:</strong> [Name 1], [Name 2], [Name 3], [Name 4]</p>
+                <p><strong>Course:</strong> Computer Communication Networks (CSCI 5273)</p>
+                <p><strong>Date:</strong> November 11, 2025</p>
+            </div>
+        </div>
+
+        <!-- Slide 2: Project Overview -->
+        <div class="slide">
+            <h2>Project Overview</h2>
+            <div class="content-grid">
+                <div class="feature-box">
+                    <h3>Problem Statement</h3>
+                    <p>UDP is a connectionless protocol that provides <span class="warning">no guarantees</span> for delivery, ordering, or duplicate elimination. This project implements a reliable file transfer system on top of UDP by building reliability mechanisms at the application layer.</p>
+                </div>
+                <div class="feature-box">
+                    <h3>Educational Purpose</h3>
+                    <p>Developed as part of a Computer Communication Networks course to:</p>
+                    <ul class="feature-list">
+                        <li>Understand transport layer protocols (UDP vs TCP)</li>
+                        <li>Implement reliability mechanisms manually</li>
+                        <li>Gain hands-on socket programming experience</li>
+                        <li>Apply theoretical networking concepts to practice</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="protocol-flow" style="margin-top: 32px;">
+                <h3>Reliability Mechanisms Implemented</h3>
+                <div style="margin-top: 16px;">
+                    <span class="flow-step">Guaranteed Delivery</span>
+                    <span class="flow-step">Correct Ordering</span>
+                    <span class="flow-step">Duplicate Elimination</span>
+                    <span class="flow-step">Automatic Retransmission</span>
+                    <span class="flow-step">Timeout Handling</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Features -->
+        <div class="slide">
+            <h2>Core Features</h2>
+            <div class="two-column">
+                <div>
+                    <h3>Operations</h3>
+                    <ul class="feature-list">
+                        <li>📥 Download files from server (get command)</li>
+                        <li>📤 Upload files to server (put command)</li>
+                        <li>📂 List server directory contents (ls command)</li>
+                        <li>🗑️ Delete remote files (delete command)</li>
+                        <li>🔒 Reliable transfer with automatic retries</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Technical Highlights</h3>
+                    <ul class="feature-list">
+                        <li>Stop-and-Wait Protocol implementation</li>
+                        <li>Frame-based transfer (2048-byte chunks)</li>
+                        <li>Cross-platform support (Windows/Linux)</li>
+                        <li>Configurable timeouts (2-second default)</li>
+                        <li>Up to 200 retries per frame</li>
+                        <li>Stateless design for each command</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="code-block">
+struct frame_t {
+    long int ID;           // Sequence number (8 bytes)
+    long int length;       // Actual data size (8 bytes)
+    char data[2048];       // Payload (2048 bytes)
+};
+// Total: 2064 bytes per frame
+            </div>
+        </div>
+
+        <!-- Slide 4: Computer Networking Concepts -->
+        <div class="slide">
+            <h2>Computer Networking Concepts</h2>
+            <div class="content-grid">
+                <div class="concept-box">
+                    <h3>1. UDP Socket Programming</h3>
+                    <ul class="concept-list">
+                        <li>Connectionless communication using sendto() and recvfrom()</li>
+                        <li>Port binding and address management</li>
+                        <li>Client-server architecture</li>
+                    </ul>
+                </div>
+                <div class="concept-box">
+                    <h3>2. Reliable Data Transfer</h3>
+                    <p><strong>Stop-and-Wait Protocol:</strong></p>
+                    <ul class="concept-list">
+                        <li>Send one frame, wait for acknowledgment</li>
+                        <li>Only proceed after receiving correct ACK</li>
+                        <li>Retransmit on timeout or wrong ACK</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="architecture-diagram">
+                <strong>Stop-and-Wait Protocol Flow:</strong><br><br>
+                Sender                          Receiver<br>
+                  |                                |<br>
+                  |------- Frame 1 -------------->|<br>
+                  |                                |<br>
+                  |<------ ACK 1 ----------------|<br>
+                  |                                |<br>
+                  |------- Frame 2 -------------->|<br>
+                  |                                |<br>
+                  |<------ ACK 2 ----------------|<br>
+            </div>
+        </div>
+
+        <!-- Slide 5: Architecture -->
+        <div class="slide">
+            <h2>System Architecture</h2>
+            <div class="architecture-diagram" style="font-size: 12px; line-height: 1.4;">
+┌─────────────────────────────────────────────────────────────────┐<br>
+│                    CLIENT APPLICATION                        │<br>
+│  ┌──────────────────────────────────────────────────────┐  │<br>
+│  │  • User Interface (Command Menu)                     │  │<br>
+│  │  • Command Parser                                    │  │<br>
+│  │  • File I/O Operations                               │  │<br>
+│  │  • Reliability Manager (ACK/Timeout)                 │  │<br>
+│  └────────────┬─────────────────────────────────────────┘  │<br>
+│               │ UDP Socket (sendto/recvfrom)               │<br>
+└───────────────┼─────────────────────────────────────────────┘<br>
+                │<br>
+                │  Network Layer (UDP/IP)<br>
+                │  Port: Configurable (e.g., 5001)<br>
+                │<br>
+┌───────────────┼─────────────────────────────────────────────┐<br>
+│               │ UDP Socket (bind/recvfrom/sendto)           │<br>
+│  ┌────────────▼─────────────────────────────────────────┐  │<br>
+│  │  • Command Handler                                   │  │<br>
+│  │  • File System Operations                            │  │<br>
+│  │  • Frame Transmission Logic                          │  │<br>
+│  │  • ACK Management                                    │  │<br>
+│  └──────────────────────────────────────────────────────┘  │<br>
+│                    SERVER APPLICATION                        │<br>
+└─────────────────────────────────────────────────────────────────┘<br>
+            </div>
+            <p style="margin-top: 24px; text-align: center; color: var(--text-secondary);">
+                Cross-platform support: <span class="highlight">Windows (Winsock2)</span> and <span class="highlight">Linux (POSIX sockets)</span>
+            </p>
+        </div>
+
+        <!-- Slide 6: Installation & Usage -->
+        <div class="slide">
+            <h2>Installation & Usage</h2>
+            <div class="two-column">
+                <div>
+                    <h3>Prerequisites</h3>
+                    <div class="feature-box">
+                        <strong>Windows:</strong>
+                        <ul class="concept-list">
+                            <li>MinGW-w64 or GCC compiler</li>
+                            <li>Winsock2 library (Windows SDK)</li>
+                        </ul>
+                    </div>
+                    <div class="feature-box" style="margin-top: 16px;">
+                        <strong>Linux:</strong>
+                        <ul class="concept-list">
+                            <li>GCC compiler</li>
+                            <li>GNU Make</li>
+                            <li>Standard POSIX libraries</li>
+                        </ul>
+                    </div>
+                </div>
+                <div>
+                    <h3>Compilation</h3>
+                    <div class="command-example">
+<strong>Windows:</strong><br>
+cd server<br>
+gcc -o server_win.exe server_win.c -lws2_32<br><br>
+cd ..\client<br>
+gcc -o client_win.exe client_win.c -lws2_32<br><br>
+<strong>Linux:</strong><br>
+make<br>
+                    </div>
+                </div>
+            </div>
+            <h3 style="margin-top: 32px;">Starting the System</h3>
+            <div class="command-example">
+<strong>Server (Terminal 1):</strong><br>
+./server 5001<br>
+Server started on port 5001<br>
+Server: Waiting for client to connect...<br><br>
+<strong>Client (Terminal 2):</strong><br>
+./client 127.0.0.1 5001<br>
+Client connected to 127.0.0.1:5001
+            </div>
+        </div>
+
+        <!-- Slide 7: Commands -->
+        <div class="slide">
+            <h2>Available Commands</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Command</th>
+                            <th>Description</th>
+                            <th>Example Usage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>ls</code></td>
+                            <td>List server directory contents</td>
+                            <td><code>Command: ls</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>get [filename]</code></td>
+                            <td>Download file from server</td>
+                            <td><code>Command: get foo1</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>put [filename]</code></td>
+                            <td>Upload file to server</td>
+                            <td><code>Command: put foo1</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>delete [filename]</code></td>
+                            <td>Delete file on server</td>
+                            <td><code>Command: delete foo1</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>exit</code></td>
+                            <td>Close connection gracefully</td>
+                            <td><code>Command: exit</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="command-example" style="margin-top: 24px;">
+<strong>Client Menu Example:</strong><br>
+===== Menu =====<br>
+Enter any of the following commands:<br>
+  1.) get [file_name]<br>
+  2.) put [file_name]<br>
+  3.) delete [file_name]<br>
+  4.) ls<br>
+  5.) exit<br>
+Command: <strong>get foo1</strong>
+            </div>
+        </div>
+
+        <!-- Slide 8: Technical Details -->
+        <div class="slide">
+            <h2>Technical Implementation Details</h2>
+            <div class="two-column">
+                <div>
+                    <h3>Reliability Mechanisms</h3>
+                    <div class="feature-box">
+                        <strong>1. Acknowledgment (ACK)</strong>
+                        <p>Receiver sends frame ID back to confirm receipt. Sender verifies ACK matches sent frame.</p>
+                    </div>
+                    <div class="feature-box" style="margin-top: 16px;">
+                        <strong>2. Timeout Handling</strong>
+                        <p>2-second timeout using setsockopt(SO_RCVTIMEO). Triggers retransmission if no ACK received.</p>
+                    </div>
+                    <div class="feature-box" style="margin-top: 16px;">
+                        <strong>3. Sequence Numbers</strong>
+                        <p>Each frame has unique ID starting from 1. Prevents duplicates and ensures ordering.</p>
+                    </div>
+                </div>
+                <div>
+                    <h3>Performance Characteristics</h3>
+                    <div class="table-container">
+                        <table>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Value</th>
+                            </tr>
+                            <tr>
+                                <td>Frame Size</td>
+                                <td>2048 bytes data + 16 bytes header</td>
+                            </tr>
+                            <tr>
+                                <td>Timeout</td>
+                                <td>2 seconds</td>
+                            </tr>
+                            <tr>
+                                <td>Max Retries (Handshake)</td>
+                                <td>20 attempts</td>
+                            </tr>
+                            <tr>
+                                <td>Max Retries (Data)</td>
+                                <td>200 attempts per frame</td>
+                            </tr>
+                            <tr>
+                                <td>Throughput (Localhost)</td>
+                                <td>~2 MB/s (theoretical)</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Project Structure -->
+        <div class="slide">
+            <h2>Project Structure</h2>
+            <div class="architecture-diagram" style="font-family: 'JetBrains Mono', monospace; font-size: 14px; text-align: left;">
+Reliable-File-Transfer-using-UDP/<br>
+│<br>
+├── README.md                      # This comprehensive guide<br>
+├── LICENSE                        # MIT License<br>
+├── Makefile                       # Linux build configuration<br>
+│<br>
+├── server/<br>
+│   ├── server.c                   # Linux server (POSIX sockets)<br>
+│   ├── server_win.c               # Windows server (Winsock2)<br>
+│   ├── server_win.exe             # Compiled Windows executable<br>
+│   └── Makefile                   # Server-specific build config<br>
+│<br>
+├── client/<br>
+│   ├── client.c                   # Linux client (POSIX sockets)<br>
+│   ├── client_win.c               # Windows client (Winsock2)<br>
+│   ├── client_win.exe             # Compiled Windows executable<br>
+│   ├── foo1                       # Test file 1<br>
+│   ├── foo2                       # Test file 2<br>
+│   ├── foo3                       # Test file 3<br>
+│   └── Makefile                   # Client-specific build config<br>
+│<br>
+└── docs/                          # Additional documentation<br>
+    ├── PROJECT_DOCUMENTATION.md   # Detailed technical report<br>
+    ├── PRESENTATION_SCRIPT.md     # Presentation guide<br>
+    └── README_DOCUMENTATION.md    # Documentation usage guide<br>
+            </div>
+        </div>
+
+        <!-- Slide 10: Testing & Results -->
+        <div class="slide">
+            <h2>Testing & Performance</h2>
+            <div class="content-grid">
+                <div class="concept-box">
+                    <h3>Test Scenarios</h3>
+                    <ul class="concept-list">
+                        <li><strong>Small File (&lt; 2KB):</strong> Single frame transmission</li>
+                        <li><strong>Medium File (2KB-100KB):</strong> Multiple frames, test ACK mechanism</li>
+                        <li><strong>Large File (&gt; 1MB):</strong> Many frames (500+), monitor performance</li>
+                        <li><strong>Network Simulation:</strong> Add delays, drop packets randomly</li>
+                    </ul>
+                </div>
+                <div class="concept-box">
+                    <h3>Key Achievements</h3>
+                    <ul class="concept-list">
+                        <li class="success">100% reliable file transfer over unreliable UDP</li>
+                        <li class="success">Automatic recovery from packet loss</li>
+                        <li class="success">Correct ordering guaranteed</li>
+                        <li class="success">Duplicate detection and elimination</li>
+                        <li class="success">Cross-platform compatibility</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="code-block" style="margin-top: 32px;">
+<strong>Test Output Example:</strong><br><br>
+Client: Total frames to receive: 3<br>
+frame.ID --> 1  frame.length --> 2048<br>
+frame.ID --> 2  frame.length --> 2048<br>
+frame.ID --> 3  frame.length --> 904<br>
+File received successfully!<br>
+Total bytes received --> 5000<br><br>
+Server: frame --> 1  Ack --> 1<br>
+Server: frame --> 2  Ack --> 2<br>
+Server: frame --> 3  Ack --> 3<br>
+File sent
+            </div>
+        </div>
+
+        <!-- Slide 11: Future Improvements -->
+        <div class="slide">
+            <h2>Future Improvements & Extensions</h2>
+            <div class="content-grid">
+                <div class="feature-box">
+                    <h3>Protocol Enhancements</h3>
+                    <ul class="feature-list">
+                        <li>Sliding Window Protocol - Higher throughput than Stop-and-Wait</li>
+                        <li>Checksums - Add CRC32/MD5 for data integrity</li>
+                        <li>Selective Repeat - More efficient error recovery</li>
+                    </ul>
+                </div>
+                <div class="feature-box">
+                    <h3>System Enhancements</h3>
+                    <ul class="feature-list">
+                        <li>Multi-threading - Support concurrent clients</li>
+                        <li>Encryption - Add TLS/DTLS for security</li>
+                        <li>Progress Bar - Visual feedback for large transfers</li>
+                        <li>Resume Support - Continue interrupted transfers</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="protocol-flow" style="margin-top: 48px;">
+                <h3>Research Applications</h3>
+                <p style="font-size: 18px; margin-top: 16px;">
+                    This project demonstrates fundamental principles applicable to:
+                </p>
+                <div style="margin-top: 24px;">
+                    <span class="flow-step">IoT Communication</span>
+                    <span class="flow-step">Real-time Systems</span>
+                    <span class="flow-step">Distributed Systems</span>
+                    <span class="flow-step">Network Protocol Design</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 12: Q&A -->
+        <div class="slide title-slide">
+            <h1>Questions & Discussion</h1>
+            <p class="subtitle">Thank you for your attention!</p>
+            <div class="team-info">
+                <p><strong>Project:</strong> Reliable File Transfer using UDP</p>
+                <p><strong>Team Members:</strong> [Name 1], [Name 2], [Name 3], [Name 4]</p>
+                <p><strong>Course:</strong> Computer Communication Networks (CSCI 5273)</p>
+            </div>
+            <div style="margin-top: 64px; font-size: 18px; color: var(--text-secondary);">
+                <p>📧 Contact: [<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="83f7e6e2eeade6eee2eaefc3f6edeaf5e6f1f0eaf7faade6e7f6">[email&#160;protected]</a>]</p>
+                <p>📂 Source Code: Available in project repository</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-counter">
+        <span id="current-slide">1</span> / <span id="total-slides">12</span>
+    </div>
+
+    <div class="navigation">
+        <button class="nav-button" id="prev-btn" onclick="previousSlide()">← Previous</button>
+        <button class="nav-button" id="next-btn" onclick="nextSlide()">Next →</button>
+    </div>
+
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        
+        document.getElementById('total-slides').textContent = totalSlides;
+
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            
+            document.getElementById('current-slide').textContent = currentSlide + 1;
+            
+            // Update button states
+            document.getElementById('prev-btn').disabled = currentSlide === 0;
+            document.getElementById('next-btn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function previousSlide() {
+            if (currentSlide > 0) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                previousSlide();
+            }
+        });
+
+        // Initialize
+        showSlide(0);
+    </script>
+</body>
+</html>

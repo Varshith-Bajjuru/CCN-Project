@@ -1,0 +1,234 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+    <title>CCN UI</title>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="../node_modules/chart.js/dist/chart.umd.js"></script>
+  </head>
+  <body>
+    <div class="container-fluid py-3">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center gap-3">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='%23007bff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 4h16v16H4z'/%3E%3Cpath d='M4 9h16'/%3E%3Ccircle cx='8' cy='6.5' r='1'/%3E%3Ccircle cx='12' cy='6.5' r='1'/%3E%3Ccircle cx='16' cy='6.5' r='1'/%3E%3C/svg%3E" alt="logo"/>
+          <h1 class="mb-0">CCN Desktop</h1>
+          <span id="connStatus" class="badge text-bg-secondary">Disconnected</span>
+        </div>
+        <div class="d-flex align-items-end gap-2">
+          <div>
+            <label class="form-label">Host</label>
+            <input id="host" class="form-control" placeholder="127.0.0.1" value="127.0.0.1" />
+          </div>
+          <div>
+            <label class="form-label">Port</label>
+            <input id="port" class="form-control" placeholder="8080" value="8080" />
+          </div>
+          <div class="pb-0">
+            <label class="form-label opacity-0">.</label>
+            <button id="btnConnect" class="btn btn-primary">Connect</button>
+          </div>
+          <div class="form-check form-switch ms-3">
+            <input class="form-check-input" type="checkbox" id="toggleTheme">
+            <label class="form-check-label" for="toggleTheme">Dark</label>
+          </div>
+        </div>
+      </div>
+
+      <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-dashboard" type="button" role="tab">Dashboard</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-transfers" type="button" role="tab">Transfers</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-analyzer" type="button" role="tab">Analyzer</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-about" type="button" role="tab">About</button>
+        </li>
+      </ul>
+
+      <div class="tab-content pt-3">
+        <div class="tab-pane fade show active" id="tab-dashboard" role="tabpanel">
+          <div class="row g-3">
+            <div class="col-lg-8">
+              <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                  <span>Throughput</span>
+                  <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="btnPing">Ping</button>
+                    <span id="rttVal" class="text-secondary small">RTT: —</span>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <canvas id="chartThroughput" height="120"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-4">
+              <div class="card h-100">
+                <div class="card-header">Stats</div>
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-6">
+                      <div class="metric">
+                        <div class="metric-label">Uploaded</div>
+                        <div class="metric-value" id="mUpBytes">0 B</div>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="metric">
+                        <div class="metric-label">Downloaded</div>
+                        <div class="metric-value" id="mDownBytes">0 B</div>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="metric">
+                        <div class="metric-label">Frames</div>
+                        <div class="metric-value" id="mFrames">0</div>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="metric">
+                        <div class="metric-label">Throughput</div>
+                        <div class="metric-value" id="mTput">0 B/s</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-transfers" role="tabpanel">
+          <div class="row g-3">
+            <div class="col-lg-8">
+              <div class="card">
+                <div class="card-header d-flex gap-2 flex-wrap">
+                  <button id="btnRefresh" class="btn btn-outline-secondary btn-sm">Refresh</button>
+                  <button id="btnUpload" class="btn btn-outline-success btn-sm">Upload</button>
+                  <input id="downloadName" class="form-control form-control-sm w-auto" placeholder="filename to download" />
+                  <button id="btnDownload" class="btn btn-outline-primary btn-sm">Download</button>
+                  <input id="deleteName" class="form-control form-control-sm w-auto" placeholder="filename to delete" />
+                  <button id="btnDelete" class="btn btn-outline-danger btn-sm">Delete</button>
+                </div>
+                <div class="card-body p-0">
+                  <table class="table table-sm mb-0">
+                    <thead>
+                      <tr><th>#</th><th>Name</th></tr>
+                    </thead>
+                    <tbody id="fileTable"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-4">
+              <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <span>Logs</span>
+                  <span class="small text-secondary">Ctrl+R refresh • Ctrl+U upload</span>
+                </div>
+                <div class="card-body">
+                  <pre id="logs" class="logs"></pre>
+                </div>
+              </div>
+              <div class="card mt-3" id="dropZone">
+                <div class="card-body text-center py-4">
+                  <div class="h5 mb-1">Drag & Drop to Upload</div>
+                  <div class="text-secondary">Drop files here, or click Upload</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-analyzer" role="tabpanel">
+          <div class="row g-3">
+            <div class="col-lg-6">
+              <div class="card h-100">
+                <div class="card-header">Sliding Window Simulator</div>
+                <div class="card-body">
+                  <div class="row g-3 align-items-center">
+                    <div class="col-6">
+                      <label class="form-label">Window size</label>
+                      <input type="range" id="swWindow" min="1" max="64" value="8" class="form-range" />
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label">Loss %</label>
+                      <input type="range" id="swLoss" min="0" max="50" value="2" class="form-range" />
+                    </div>
+                  </div>
+                  <div class="mt-3">
+                    <div class="small text-secondary">Estimated throughput</div>
+                    <div class="h4" id="swThroughput">—</div>
+                  </div>
+                  <div class="timeline" id="swTimeline"></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="card h-100">
+                <div class="card-header">Integrity & Speed Tools</div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label class="form-label">Checksum a local file (SHA-256)</label>
+                    <input type="file" id="checksumFile" class="form-control" />
+                    <div class="small text-secondary mt-2" id="checksumOut">—</div>
+                  </div>
+                  <div>
+                    <button class="btn btn-outline-secondary" id="btnSpeedHint">How fast can we go?</button>
+                    <div class="small text-secondary mt-2" id="speedHint">—</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-about" role="tabpanel">
+          <div class="card">
+            <div class="card-body">
+              <h3>About File Transfer</h3>
+              <p>
+                This app speaks a simple UDP-based file protocol to a C server. Unlike TCP, UDP doesn't guarantee delivery, order, or duplication suppression. The client and server implement their own reliability with sequence numbers, acknowledgements (ACKs), and fixed-size frames.
+              </p>
+              <h5>Key concepts</h5>
+              <ul>
+                <li><b>Frames and ACKs:</b> Each 2048-byte frame carries an ID and length. The receiver sends an ACK with the same ID. Missing ACKs trigger retransmits.</li>
+                <li><b>Stop-and-wait vs windowing:</b> Stop-and-wait sends one frame and waits; sliding windows let multiple frames fly before ACKs return, improving utilization over higher RTT links.</li>
+                <li><b>Throughput vs RTT and loss:</b> Roughly, throughput grows with window size and shrinks with RTT and loss. Bigger windows help until the path bottleneck saturates.</li>
+                <li><b>Integrity:</b> Use checksums (e.g., SHA-256) to verify file contents after transfer.</li>
+              </ul>
+              <div class="row g-3 align-items-center">
+                <div class="col-lg-6">
+                  <svg viewBox="0 0 600 120" class="w-100 border rounded" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="10" y="20" width="580" height="80" rx="8" fill="#f8f9fa" stroke="#dee2e6" />
+                    <circle cx="60" cy="60" r="16" fill="#0d6efd" />
+                    <circle cx="120" cy="60" r="16" fill="#0d6efd" />
+                    <circle cx="180" cy="60" r="16" fill="#0d6efd" />
+                    <circle cx="240" cy="60" r="16" fill="#0d6efd" />
+                    <text x="300" y="65" text-anchor="middle" font-size="14" fill="#6c757d">Sliding window in flight →</text>
+                  </svg>
+                </div>
+                <div class="col-lg-6 small text-secondary">
+                  The diagram shows several frames "in flight" before ACKs come back. With windowing, a path with 50 ms RTT and 10 Mbps can deliver far more than stop-and-wait. Try the Analyzer tab to explore.
+                </div>
+              </div>
+              <hr />
+              <p class="small text-secondary">
+                Tip: You can drag and drop files into the Transfers tab. Press Ctrl+R to refresh, Ctrl+U to upload. Toggle Dark mode in the header to switch themes.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./renderer.js"></script>
+  </body>
+</html>

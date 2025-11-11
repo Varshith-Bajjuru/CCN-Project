@@ -1,0 +1,19 @@
+{
+  "name": "ccn-ui",
+  "version": "1.0.0",
+  "description": "Electron UI client for CCN UDP server (Windows)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "postinstall": "echo If installation of electron fails behind proxy, set npm config properly"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "28.3.3"
+  },
+  "dependencies": {
+    "bootstrap": "5.3.3",
+    "chart.js": "4.4.1"
+  }
+}

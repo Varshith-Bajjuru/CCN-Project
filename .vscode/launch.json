@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Electron: Debug Renderer",
+      "type": "chrome",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceFolder}/ui_electron/node_modules/.bin/electron.cmd",
+      "runtimeArgs": ["."],
+      "cwd": "${workspaceFolder}/ui_electron",
+      "webRoot": "${workspaceFolder}/ui_electron/src",
+      "preLaunchTask": "UI: npm install (ui_electron)",
+      "postDebugTask": "cmd: exit" 
+    },
+    {
+      "name": "Server: Run 5001 (Windows)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/server/server_win.exe",
+      "args": ["5001"],
+      "cwd": "${workspaceFolder}/server",
+      "stopAtEntry": false,
+      "console": "integratedTerminal",
+      "preLaunchTask": "Build server (Windows)"
+    }
+  ]
+}
